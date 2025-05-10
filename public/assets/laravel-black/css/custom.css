@@ -1,0 +1,24 @@
+.sidebar {
+    position: fixed;
+    top: 0; /* Atur ke 0 agar berada di atas */
+    left: 0; /* Atur ke 0 agar berada di kiri */
+    height: 100vh; /* Tinggi penuh */
+    width: 250px; /* Sesuaikan lebar sidebar */
+    z-index: 1030; /* Pastikan di atas elemen lain */
+    overflow-y: auto; /* Scroll jika konten lebih dari tinggi */
+}
+
+.navbar {
+    position: fixed;
+    top: 0; /* Atur ke 0 agar berada di atas */
+    left: 0; /* Atur ke 0 agar berada di kiri */
+    width: 100%; /* Lebar penuh */
+    height: 60px; /* Sesuaikan tinggi navbar */
+    z-index: 1040; /* Pastikan di atas sidebar */
+    background-color: #1a1d2d; /* Warna latar belakang navbar */
+}
+
+.main-content {
+    margin-top: 60px; /* Sesuaikan dengan tinggi navbar */
+    margin-left: 300px; /* Sesuaikan dengan lebar sidebar */
+}
