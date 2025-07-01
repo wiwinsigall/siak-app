@@ -11,13 +11,20 @@ use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
-    public function login()
+    public function index()
+    {
+        $users = User::all();
+        return view('user_management', compact('users'));
+    }
+
+    public function login(Request $request)
     {
         $data['title'] = 'Login';
+        $data['showRegister'] = $request->query('role') === 'staff'; // hanya jika ?role=staff
         return view('auth.login', $data);
     }
 
-    public function login_action(Request $request)
+    public function loginAction(Request $request)
     {
         $request->validate([
             'email' => 'required|email',
@@ -50,17 +57,15 @@ class UserController extends Controller
         }
 
         return back()->with('error', 'Email atau password salah.');
-    }
-        
+    }   
 
     public function register()
     {
-
         $data['title'] = 'Register';
         return view('auth.register', $data); 
     }
 
-    public function register_action(Request $request)
+    public function registerAction(Request $request)
     {
         $request->validate([
             'nama' => 'required',
@@ -68,6 +73,8 @@ class UserController extends Controller
             'password' => 'required',
             'password_confirmation' => 'required|same:password',
             'role' => 'required|in:staff,guru,wali_kelas,siswa,kepsek',
+            'nip' => 'nullable|required_if:role,guru,role,wali_kelas,role,kepsek|unique:user,nip',
+            'nis' => 'nullable|required_if:role,siswa|unique:user,nis',
         ]);
 
        $user = new User([
@@ -75,6 +82,8 @@ class UserController extends Controller
         'email' => $request->email,
         'password' => Hash::make($request->password),
         'role' => $request->role,
+        'nip' => in_array($request->role, ['guru', 'wali_kelas', 'kepsek']) ? $request->nip : null,
+        'nis' => $request->role === 'siswa' ? $request->nis : null,
         ]);
 
         $user->save();
@@ -92,6 +101,4 @@ class UserController extends Controller
     
         return redirect()->route('login')->with('success', 'Logout berhasil.');
     }
-    
-
 }

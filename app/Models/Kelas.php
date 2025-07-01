@@ -14,11 +14,34 @@ class Kelas extends Model
     public $timestamps = true; // Mengaktifkan created_at & updated_at
 
     protected $fillable = [
-        'id_kelas', 'nama_kelas', 'semester', 'tahun_ajaran'
+         'kelas', 'jurusan' 
     ];
 
     public function siswa()
     {
-        return $this->hasMany(Siswa::class, 'id_kelas');
+        return $this->belongsToMany(Student::class, 'registrasi_kelas', 'id_kelas', 'nis')
+                    ->withPivot(['id_tahun_ajaran', 'status', 'keterangan'])
+                    ->withTimestamps();
     }
+
+   public function guru()
+    {
+        return $this->belongsTo(Teacher::class, 'nip', 'nip');
+    }
+
+    public function wali_kelas()
+    {
+        return $this->belongsTo(Teacher::class, 'nip', 'nip');  
+    }
+
+   public function mata_pelajaran()
+    {
+        return $this->hasMany(Subject::class, 'id_kelas', 'id_kelas');
+    }
+
+    public function registrasi_kelas()
+    {
+        return $this->hasMany(ClassRegistration::class, 'id_kelas', 'id_kelas');
+    }
+
 }

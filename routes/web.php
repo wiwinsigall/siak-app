@@ -1,94 +1,166 @@
 <?php
 
-use App\Http\Controllers\AbsensiController;
+use App\Http\Controllers\AcademicYearController;
+use App\Http\Controllers\AnnouncementController;
+use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\ClassController;
+use App\Http\Controllers\ClassRegistrationController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\GuruController;
-use App\Http\Controllers\KelasController;
-use App\Http\Controllers\MataPelajaranController;
-use App\Http\Controllers\PengumumanAkademikController;
+use App\Http\Controllers\HistoryController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\SiswaController;
+use App\Http\Controllers\RaporController;
+use App\Http\Controllers\ScoresController;
+use App\Http\Controllers\StudentController;
+use App\Http\Controllers\SubjectController;
+use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 // Rute default
-Route::get('/', function () {
-    return redirect()->route('login'); // Arahkan ke halaman login
+Route::redirect('/', '/login');
+
+// Rute autentikasi (UserController)
+Route::controller(UserController::class)->group(function () {
+    Route::get('/register', 'register')->name('register');
+    Route::post('/register', 'registerAction')->name('registerAction');
+    Route::get('/login', 'login')->name('login');
+    Route::post('/login', 'loginAction')->name('loginAction');
+    Route::post('/logout', 'logout')->name('logout');
+    Route::get('/users', 'index')->name('users.index');
 });
 
 // Rute yang memerlukan autentikasi
 Route::middleware(['auth'])->group(function () {
-    Route::get('/dashboard/staff', [DashboardController::class, 'staff'])->name('dashboard.staff');
-    Route::get('/dashboard/guru', [DashboardController::class, 'guru'])->name('dashboard.guru');
-    Route::get('/dashboard/siswa', [DashboardController::class, 'siswa'])->name('dashboard.siswa');
-    Route::get('/dashboard/wali_kelas', [DashboardController::class, 'wali_kelas'])->name('dashboard.wali_kelas');
-    Route::get('/dashboard/kepsek', [DashboardController::class, 'kepsek'])->name('dashboard.kepsek');
+
+    // Dashboard
+    Route::prefix('dashboard')->controller(DashboardController::class)->group(function () {
+        Route::get('/staff', 'staff')->name('dashboard.staff');
+        Route::get('/kepsek', 'kepsek')->name('dashboard.kepsek');
+        Route::get('/guru', 'guru')->name('dashboard.guru');
+        Route::get('/wali_kelas', 'wali_kelas')->name('dashboard.wali_kelas');
+        Route::get('/siswa', 'siswa')->name('dashboard.siswa');
+    });
+
+    // Siswa
+    Route::prefix('siswa')->controller(StudentController::class)->group(function () {
+        Route::get('/', 'index')->name('siswa.index');
+        Route::get('/create', 'create')->name('siswa.create');
+        Route::post('/store', 'store')->name('siswa.store');
+        Route::get('/{nis}/detail', 'detail')->name('siswa.detail');
+        Route::get('/{nis}/edit', 'edit')->name('siswa.edit');
+        Route::put('/{nis}', 'update')->name('siswa.update');
+        Route::delete('/{nis}', 'delete')->name('siswa.delete');
+    });
+
+    // Guru
+    Route::prefix('guru')->controller(TeacherController::class)->group(function () {
+        Route::get('/', 'index')->name('guru.index');
+        Route::get('/create', 'create')->name('guru.create');
+        Route::post('/store', 'store')->name('guru.store');
+        Route::get('/{nip}/detail', 'detail')->name('guru.detail');
+        Route::get('/{nip}/edit', 'edit')->name('guru.edit');
+        Route::put('/{nip}', 'update')->name('guru.update');
+        Route::delete('/{nip}', 'delete')->name('guru.delete');
+    });
+
+    // Mata Pelajaran
+    Route::prefix('mata_pelajaran')->controller(SubjectController::class)->group(function () {
+        Route::get('/', 'index')->name('mata_pelajaran.index');
+        Route::get('/create', 'create')->name('mata_pelajaran.create');
+        Route::post('/store', 'store')->name('mata_pelajaran.store');
+        Route::get('/{id}/edit', 'edit')->name('mata_pelajaran.edit');
+        Route::put('/{id}', 'update')->name('mata_pelajaran.update');
+        Route::delete('/{id}', 'delete')->name('mata_pelajaran.delete');
+    });
+
+    // Tahun Ajaran
+    Route::prefix('tahun_ajaran')->controller(AcademicYearController::class)->group(function () {
+        Route::get('/',  'index')->name('tahun_ajaran.index');
+        Route::get('/create', 'create')->name('tahun_ajaran.create');
+        Route::post('/store', 'store')->name('tahun_ajaran.store');
+        Route::post('/activate/{id}', 'activate')->name('tahun_ajaran.activate');
+        Route::get('/{id}/edit', 'edit')->name('tahun_ajaran.edit');
+        Route::put('/{id}', 'update')->name('tahun_ajaran.update');
+        Route::delete('/{id}', 'delete')->name('tahun_ajaran.delete');
+    });
+
+    // Registrasi Siswa ke Kelas
+    Route::prefix('registrasi_kelas')->controller(ClassRegistrationController::class)->group(function () {
+        Route::get('/', 'create')->name('registrasi_kelas.create');
+        Route::post('/', 'store')->name('registrasi_kelas.store');
+    });
+
+    // Kelas
+    Route::prefix('kelas')->controller(ClassController::class)->group(function () {
+        Route::get('/', 'index')->name('kelas.index');
+        Route::get('/create', 'create')->name('kelas.create');
+        Route::post('/store', 'store')->name('kelas.store');
+        Route::get('/{id}/detail', 'detail')->name('kelas.detail');
+        Route::get('/{id}/edit', 'edit')->name('kelas.edit');
+        Route::put('/{id}', 'update')->name('kelas.update');
+        Route::delete('/{id}', 'delete')->name('kelas.delete');
+        Route::get('/promotion/form', 'showPromotionForm')->name('kelas.promotion_form');
+        Route::post('/promotion/process', 'promotionProcess')->name('kelas.promotion_process');
+    });
+
+    // Pengumuman Akademik
+    Route::prefix('pengumuman_akademik')->controller(AnnouncementController::class)->group(function () {
+        Route::get('/', 'index')->name('pengumuman_akademik.index');
+        Route::get('/create', 'create')->name('pengumuman_akademik.create');
+        Route::post('/store', 'store')->name('pengumuman_akademik.store');
+        Route::get('/{id}/edit', 'edit')->name('pengumuman_akademik.edit');
+        Route::put('/{id}', 'update')->name('pengumuman_akademik.update');
+        Route::delete('/{id}', 'delete')->name('pengumuman_akademik.delete');
+    });
+
+    // Profile
+    Route::get('/profile', [ProfileController::class, 'index'])->middleware('auth')->name('profile');
+
+    // Siswa melihat Absensi pribadi
+    Route::get('/absensi/siswa', [AttendanceController::class, 'studentAttendance'])->name('absensi.siswa');
+    Route::get('/absensi/siswa/mapel/{id_mapel}', [AttendanceController::class, 'studentAttendanceDetail'])->name('absensi.siswa.detail');
+
+    // Absensi
+    Route::prefix('absensi')->controller(AttendanceController::class)->group(function () {
+        Route::get('/', 'index')->name('absensi.index');
+        Route::get('/{id_kelas}/mapel', 'showBySubject')->name('absensi.showBySubject');
+        Route::get('/attendanceRecap/{id_kelas}/{id_mapel}', 'attendanceRecap')->name('absensi.attendanceRecap');
+        Route::get('/{id_kelas}/tanggal/{tanggal}', 'showByDate')->name('absensi.showByDate');
+        Route::get('/{id_kelas}', 'attendance')->name('absensi.attendance');
+        Route::match(['get', 'post'], '/create/{id_kelas}', 'create')->name('absensi.create');
+        Route::post('/store', 'store')->name('absensi.store');
+        Route::get('/{id_absensi}/edit', 'edit')->name('absensi.edit');
+        Route::put('/{id_absensi}', 'update')->name('absensi.update');
+        Route::delete('/{id_kelas}/{tanggal}/delete', 'deleteByDate')->name('absensi.deleteByDate');
+    });
+
+    // Nilai
+    Route::prefix('nilai')->controller(ScoresController::class)->group(function () {
+        Route::get('/', 'index')->name('nilai.index');
+        Route::get('/rekap/{id_kelas}', 'scoresRecap')->name('nilai.scoresRecap');
+        Route::get('/kelas/{id_kelas}', 'showBySubject')->name('nilai.showBySubject');
+        Route::get('/kelas/{id_kelas}/mapel/{id_mapel}', 'scores')->name('nilai.scores');
+        Route::get('/kelas/{id_kelas}/mapel/{id_mapel}/create', 'create')->name('nilai.create');
+        Route::post('/kelas/{id_kelas}/mapel/{id_mapel}', 'store')->name('nilai.store');
+
+        // Gunakan id_registrasi dan id_mapel untuk edit & update
+        Route::get('/registrasi/{id_registrasi}/mapel/{id_mapel}/edit', 'edit')->name('nilai.edit');
+        Route::put('/registrasi/{id_registrasi}/mapel/{id_mapel}', 'update')->name('nilai.update');
+    });
+
+    // Siswa melihat nilai pribadi
+    Route::get('/siswa/nilai', [ScoresController::class, 'studentScores'])->name('nilai.siswa');
+    
+    // Cetak Rapor
+     Route::prefix('rapor')->controller(RaporController::class)->group(function () {
+        Route::get('/', 'index')->name('rapor.index');
+        Route::get('/cetak/{nis}/{id_tahun_ajaran}', 'cetak')->name('rapor.cetak');
+    });
+
+    // Riwayat Siswa
+    Route::prefix('riwayat')->controller(HistoryController::class)->group(function () {
+        Route::get('/siswa', 'index')->name('riwayat.siswa');
+    });
+
+
 });
-
-// Rute untuk UserController
-Route::controller(UserController::class)->group(function(){
-    // Registrasi
-    Route::get('/register', 'register')->name('register'); 
-    Route::post('/register', 'register_action')->name('register.action'); 
-
-    // Login
-    Route::get('/login', 'login')->name('login');
-    Route::post('/login', 'login_action')->name('login.action'); 
-
-    // Logout
-    Route::get('/logout', 'logout')->name('logout');
-});
-
-// Rute untuk Data Guru
-Route::get('/guru', [GuruController::class, 'index'])->name('guru.index');
-Route::get('/guru/tambah', [GuruController::class, 'tambah'])->name('guru.tambah');
-Route::post('/guru/tambah', [GuruController::class, 'tambah'])->name('guru.tambah');
-Route::get('/guru/{nip}/detail', [GuruController::class, 'detail'])->name('guru.detail');
-Route::get('/guru/{nip}/ubah', [GuruController::class, 'ubah'])->name('guru.ubah');
-Route::put('/guru/{nip}', [GuruController::class, 'update'])->name('guru.update');
-Route::delete('/guru/{nip}', [GuruController::class, 'hapus'])->name('guru.hapus');
-
-// Rute untuk Data Siswa
-Route::get('/siswa', [SiswaController::class, 'index'])->name('siswa.index');
-Route::get('/siswa/tambah', [SiswaController::class, 'tambah'])->name('siswa.tambah');
-Route::post('/siswa/tambah', [SiswaController::class, 'tambah'])->name('siswa.tambah');
-Route::get('/siswa/{nis}/detail', [SiswaController::class, 'detail'])->name('siswa.detail');
-Route::get('/siswa/{nis}/ubah', [SiswaController::class, 'ubah'])->name('siswa.ubah');
-Route::put('/siswa/{nis}', [SiswaController::class, 'update'])->name('siswa.update');
-Route::delete('/siswa/{nis}', [SiswaController::class, 'hapus'])->name('siswa.hapus');
-
-// Rute untuk Kelas
-Route::get('/kelas', [KelasController::class, 'index'])->name('kelas.index');
-Route::get('/kelas/tambah', [KelasController::class, 'tambah'])->name('kelas.tambah');
-Route::post('/kelas/tambah', [KelasController::class, 'tambah'])->name('kelas.tambah');
-Route::get('/kelas/{id}/ubah', [KelasController::class, 'ubah'])->name('kelas.ubah');
-Route::put('/kelas/{id}', [KelasController::class, 'update'])->name('kelas.update');
-Route::delete('/kelas/{id}', [KelasController::class, 'hapus'])->name('kelas.hapus');
-
-//Rute untuk Mata Pelajaran
-Route::get('/mata_pelajaran', [MataPelajaranController::class, 'index'])->name('mata_pelajaran.index');
-Route::get('/mata_pelajaran/tambah', [MataPelajaranController::class, 'tambah'])->name('mata_pelajaran.tambah');
-Route::post('/mata_pelajaran/tambah', [MataPelajaranController::class, 'tambah'])->name('mata_pelajaran.tambah');
-Route::get('/mata_pelajaran/{id}/ubah', [MataPelajaranController::class, 'ubah'])->name('mata_pelajaran.ubah');
-Route::put('/mata_pelajaran/{id}', [MataPelajaranController::class, 'update'])->name('mata_pelajaran.update');
-Route::delete('/mata_pelajaran/{id}', [MataPelajaranController::class, 'hapus'])->name('mata_pelajaran.hapus');
-
-// Rute untuk pengumuman akademik
-Route::get('/pengumuman_akademik', [PengumumanAkademikController::class, 'index'])->name('pengumuman_akademik.index');
-Route::get('/pengumuman_akademik/tambah', [PengumumanAkademikController::class, 'tambah'])->name('pengumuman_akademik.tambah');
-Route::post('/pengumuman_akademik/tambah', [PengumumanAkademikController::class, 'tambah'])->name('pengumuman_akademik.tambah');
-Route::get('/pengumuman_akademik/{id}/ubah', [PengumumanAkademikController::class, 'ubah'])->name('pengumuman_akademik.ubah');
-Route::put('/pengumuman_akademik/{id}', [PengumumanAkademikController::class, 'update'])->name('pengumuman_akademik.update');
-Route::delete('/pengumuman_kademik/{id}', [PengumumanAkademikController::class, 'hapus'])->name('pengumuman_akademik.hapus');
-
-// Rute untuk profile
-Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
-
-//Rute untuk Absensi Siswa
-Route::get('/absensi', [AbsensiController::class, 'index'])->name('absensi.index');
-Route::get('/absensi/rekapAbsensi/{id_kelas}', [AbsensiController::class, 'rekapAbsensi'])->name('absensi.rekapAbsensi');
-Route::get('/absensi/{id_kelas}', [AbsensiController::class, 'lihatAbsensi'])->name('absensi.lihatAbsensi');
-Route::get('/absensi/{id_kelas}/tanggal/{tanggal}', [AbsensiController::class, 'lihatAbsensiTanggal'])->name('absensi.lihatAbsensiTanggal');
-Route::get('/absensi/tambah/{id_kelas}', [AbsensiController::class, 'tambah'])->name('absensi.tambah');
-Route::post('/absensi/tambah/{id_kelas}', [AbsensiController::class, 'tambah'])->name('absensi.tambah');
-Route::post('/absensi/simpan', [AbsensiController::class, 'simpan'])->name('absensi.simpan');
