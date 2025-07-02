@@ -18,6 +18,7 @@
     <link href="//cdn.datatables.net/2.3.0/css/dataTables.dataTables.min.css">
     <!-- Scripts -->
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
+    x`
 </head>
 
 <body>
