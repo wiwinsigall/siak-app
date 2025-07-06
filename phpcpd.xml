@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pmd-cpd>
+  <duplication lines="26" tokens="116">
+    <file path="C:\xampp\htdocs\siak-app\app\Http\Controllers\AttendanceController.php" line="15"/>
+    <file path="C:\xampp\htdocs\siak-app\app\Http\Controllers\ScoresController.php" line="13"/>
+    <codefragment>class AttendanceController extends Controller&#13;
+{&#13;
+    public function index()&#13;
+    {&#13;
+        $user = Auth::user();&#13;
+        $kelas = collect();&#13;
+&#13;
+        if ($user-&gt;role === 'staff') {&#13;
+            $kelas = Kelas::with(['guru', 'siswa', 'registrasi_kelas.tahun_ajaran'])-&gt;get();&#13;
+        } elseif (in_array($user-&gt;role, ['guru', 'wali_kelas'])) {&#13;
+            $kelas_ids = Subject::where('nip', $user-&gt;nip)-&gt;pluck('id_kelas')-&gt;unique();&#13;
+            $kelas = Kelas::with(['guru', 'siswa', 'registrasi_kelas.tahun_ajaran'])&#13;
+                        -&gt;whereIn('id_kelas', $kelas_ids)&#13;
+                        -&gt;get();&#13;
+        }&#13;
+&#13;
+        foreach ($kelas as $k) {&#13;
+            $aktifReg = $k-&gt;registrasi_kelas-&gt;first(fn($reg) =&gt; optional($reg-&gt;tahun_ajaran)-&gt;status === 'Aktif');&#13;
+            $k-&gt;tahun_ajaran_aktif = $aktifReg?-&gt;tahun_ajaran;&#13;
+            $k-&gt;wali_kelas = $aktifReg?-&gt;guru?-&gt;nama;&#13;
+            $k-&gt;jumlah_siswa_aktif = $aktifReg&#13;
+                ? ClassRegistration::where('id_kelas', $k-&gt;id_kelas)-&gt;where('id_tahun_ajaran', $aktifReg-&gt;id_tahun_ajaran)-&gt;count()&#13;
+                : 0;&#13;
+        }&#13;
+&#13;
+        return view('absensi.class', compact('kelas'));&#13;
+</codefragment>
+  </duplication>
+</pmd-cpd>

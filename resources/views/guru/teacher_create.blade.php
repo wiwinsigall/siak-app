@@ -58,7 +58,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="golongan">Golongan</label>
+                    <label for="no_hp">No HP</label>
                     <input type="text" class="form-control" id="no_hp" name="no_hp" required>
                 </div>
 
