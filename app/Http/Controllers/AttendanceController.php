@@ -413,32 +413,39 @@ class AttendanceController extends Controller
             return redirect()->route('dashboard')->with('error', 'Data siswa tidak ditemukan.');
         }
 
-        // Ambil parameter dari URL atau default ke X dan ganjil
-        $kelasSekarang = $request->get('kelas', 'X');
-        $semesterSekarang = $request->get('semester', 'ganjil');
+        // Ambil parameter dari URL jika ada
+        $kelasFilter = $request->get('kelas');
+        $semesterFilter = $request->get('semester');
 
-        // Ambil semua registrasi milik siswa
+        // Ambil semua data registrasi siswa (semua tahun ajaran & semester)
         $registrasi = $siswa->registrasi_kelas()->with(['kelas', 'tahun_ajaran'])->get();
 
-        // Filter registrasi sesuai kelas dan semester aktif
-        $registrasiFiltered = $registrasi->filter(function ($reg) use ($kelasSekarang, $semesterSekarang) {
-            return strtolower(optional($reg->kelas)->kelas) === strtolower($kelasSekarang)
-                && strtolower(optional($reg->tahun_ajaran)->semester) === strtolower($semesterSekarang)
-                && strtolower(optional($reg->tahun_ajaran)->status) === 'aktif'
-                && strtolower(optional($reg)->status) === 'aktif';
-        });
+        // Filter opsional berdasarkan kelas dan semester jika diberikan
+        if ($kelasFilter || $semesterFilter) {
+            $registrasi = $registrasi->filter(function ($reg) use ($kelasFilter, $semesterFilter) {
+                $kelasMatch = $kelasFilter
+                    ? strtolower(optional($reg->kelas)->kelas) === strtolower($kelasFilter)
+                    : true;
 
-        // Ambil data absensi berdasarkan id_registrasi
+                $semesterMatch = $semesterFilter
+                    ? strtolower(optional($reg->tahun_ajaran)->semester) === strtolower($semesterFilter)
+                    : true;
+
+                return $kelasMatch && $semesterMatch;
+            });
+        }
+
+        // Ambil semua absensi berdasarkan semua id_registrasi hasil filter
         $absensi = Attendance::with(['mata_pelajaran'])
-            ->whereIn('id_registrasi', $registrasiFiltered->pluck('id_registrasi'))
+            ->whereIn('id_registrasi', $registrasi->pluck('id_registrasi'))
             ->where('nis', $siswa->nis)
             ->get()
             ->groupBy('id_mapel');
 
         return view('absensi.student_attendance', [
             'absensi' => $absensi,
-            'kelasAktif' => strtoupper($kelasSekarang),
-            'semesterAktif' => strtolower($semesterSekarang),
+            'kelasAktif' => strtoupper($kelasFilter ?? '-'),
+            'semesterAktif' => strtolower($semesterFilter ?? '-'),
         ]);
     }
 

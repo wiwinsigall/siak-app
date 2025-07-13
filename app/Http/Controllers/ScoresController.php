@@ -324,30 +324,38 @@ class ScoresController extends Controller
             return back()->with('error', 'Data siswa tidak ditemukan.');
         }
 
-        // Ambil parameter dari URL atau set default
-        $kelasSekarang = $request->get('kelas', 'X');
-        $semesterSekarang = $request->get('semester', 'ganjil');
+        // Ambil parameter dari URL jika disediakan
+        $kelasFilter = $request->get('kelas');
+        $semesterFilter = $request->get('semester');
 
-        // Ambil semua registrasi milik siswa
+        // Ambil semua registrasi milik siswa (tanpa filter tahun ajaran aktif)
         $registrasi = $siswa->registrasi_kelas()->with(['kelas', 'tahun_ajaran'])->get();
 
-        // Filter sesuai kelas dan semester aktif
-        $registrasiFiltered = $registrasi->filter(function ($reg) use ($kelasSekarang, $semesterSekarang) {
-            return strtolower(optional($reg->kelas)->kelas) === strtolower($kelasSekarang)
-                && strtolower(optional($reg->tahun_ajaran)->semester) === strtolower($semesterSekarang)
-                && strtolower(optional($reg->tahun_ajaran)->status) === 'aktif';
-        });
+        // Opsional: filter berdasarkan kelas & semester jika ada input
+        if ($kelasFilter || $semesterFilter) {
+            $registrasi = $registrasi->filter(function ($reg) use ($kelasFilter, $semesterFilter) {
+                $kelasMatch = $kelasFilter
+                    ? strtolower(optional($reg->kelas)->kelas) === strtolower($kelasFilter)
+                    : true;
 
-        // Ambil nilai berdasarkan id_registrasi
-        $nilai = Score::with(['mata_pelajaran', 'registrasi_kelas.kelas'])
+                $semesterMatch = $semesterFilter
+                    ? strtolower(optional($reg->tahun_ajaran)->semester) === strtolower($semesterFilter)
+                    : true;
+
+                return $kelasMatch && $semesterMatch;
+            });
+        }
+
+        // Ambil nilai berdasarkan semua id_registrasi hasil filter (atau semua jika tanpa filter)
+        $nilai = Score::with(['mata_pelajaran', 'registrasi_kelas.kelas', 'registrasi_kelas.tahun_ajaran'])
             ->where('nis', $siswa->nis)
-            ->whereIn('id_registrasi', $registrasiFiltered->pluck('id_registrasi')->toArray())
+            ->whereIn('id_registrasi', $registrasi->pluck('id_registrasi')->toArray())
             ->get();
 
         return view('nilai.student_scores', [
             'nilai' => $nilai,
-            'kelasAktif' => $kelasSekarang,
-            'semesterAktif' => $semesterSekarang
+            'kelasAktif' => $kelasFilter,
+            'semesterAktif' => $semesterFilter,
         ]);
     }
 
